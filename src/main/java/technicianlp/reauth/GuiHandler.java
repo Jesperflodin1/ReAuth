@@ -27,7 +27,7 @@ public final class GuiHandler {
     /**
      * Cache the Status for 5 Minutes
      */
-    private static final CachedProperty<ValidationStatus> status = new CachedProperty<>(1000 * 60 * 5, ValidationStatus.Unknown);
+    private static final CachedProperty<ValidationStatus> status = new CachedProperty<>(1000 * 60 * 3, ValidationStatus.Unknown);
     private static Thread validator;
 
     static boolean enabled = true;
@@ -40,13 +40,7 @@ public final class GuiHandler {
             e.getButtonList().add(new GuiButton(17325, 5, 5, 100, 20, "Re-Login"));
             run = true;
 
-            if (enabled && !status.check()) {
-                if (validator != null)
-                    validator.interrupt();
-                validator = new Thread(() -> status.set(Secure.SessionValid(false) ? ValidationStatus.Valid : ValidationStatus.Invalid), "Session-Validator");
-                validator.setDaemon(true);
-                validator.start();
-            }
+            runValidator();
         } else if (e.getGui() instanceof GuiMainMenu) {
             run = true;
             // Support for Custom Main Menu (add button outside of viewport)
@@ -63,17 +57,30 @@ public final class GuiHandler {
              			if (((TextComponentTranslation) sibling).getKey().contentEquals("disconnect.loginFailedInfo.invalidSession")) {
              				Main.log.info("Session is invalid!");
              				status.invalidate();
+             				Main.log.info("Running login from disconnect screen");
+             				Secure.login();
              			}
              		}
              	}
         	} catch (Exception e1) {
-        		Main.log.info("Disconnected. I don't care. error:" + e1.getLocalizedMessage());
+        		Main.log.info("Disconnected. I don't really care why but i'll try to run a session validation just to be nice. error:" + e1.getLocalizedMessage());
+        		runValidator();
         	}
         	
         }
 
         if (run && VersionChecker.shouldRun())
             VersionChecker.update();
+    }
+    
+    private static void runValidator() {
+    	if (enabled && !status.check()) {
+            if (validator != null)
+                validator.interrupt();
+            validator = new Thread(() -> status.set(Secure.SessionValid(false) ? ValidationStatus.Valid : ValidationStatus.Invalid), "Session-Validator");
+            validator.setDaemon(true);
+            validator.start();
+        }
     }
 
     @SubscribeEvent
