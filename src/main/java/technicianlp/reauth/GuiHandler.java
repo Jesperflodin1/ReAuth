@@ -87,7 +87,7 @@ public final class GuiHandler {
     
     static final class reflectionHelper {
     	
-    	private static Field messageField = ReflectionHelper.findField(GuiDisconnected.class, "message", "f", "field_146304_f ");
+    	private static Field messageField = ReflectionHelper.findField(GuiDisconnected.class, "message", "f", "field_146304_f");
     	static ITextComponent getDCMessage(GuiDisconnected dcgui) {
     		try {
 				return (ITextComponent) reflectionHelper.messageField.get(dcgui);
