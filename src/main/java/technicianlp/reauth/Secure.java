@@ -114,6 +114,7 @@ final class Secure {
     	if (Secure.hasSavedCredentials()) {
     		Main.log.info("I have creds. Trying to login");
     		Secure.login(Secure.username, Secure.password, false);
+    		return;
     	}
     	Main.log.error("I dont have any credentials. I give up. No connection was made.");
     }

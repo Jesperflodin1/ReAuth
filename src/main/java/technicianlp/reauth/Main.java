@@ -15,7 +15,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 
-@Mod(modid = "reauth", name = "ReAuth", version = "3.6.1-JesperF", guiFactory = "technicianlp.reauth.GuiFactory", canBeDeactivated = true, clientSideOnly = true, acceptedMinecraftVersions = "[1.12]", certificateFingerprint = "0f3d150987bf51f5e04b63370869f59851ddd044")
+@Mod(modid = "reauth", name = "ReAuth", version = "3.6.2-JesperF", guiFactory = "technicianlp.reauth.GuiFactory", canBeDeactivated = true, clientSideOnly = true, acceptedMinecraftVersions = "[1.12]", certificateFingerprint = "0f3d150987bf51f5e04b63370869f59851ddd044")
 public final class Main {
 
     static final Logger log = LogManager.getLogger("ReAuth");
