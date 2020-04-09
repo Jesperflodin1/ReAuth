@@ -1,6 +1,6 @@
 {
   "1.12": {
-    "latest": "3.6.1-JesperF",
+    "latest": "3.6.2-JesperF",
     "latest-message": "Added automatic reauthentication on invalid session",
     "allowed": "[3.2,)",
     "allowed-message": "Version too old"
