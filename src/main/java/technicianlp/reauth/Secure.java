@@ -39,6 +39,8 @@ final class Secure {
     private static final YggdrasilAuthenticationService yas;
     private static final YggdrasilUserAuthentication yua;
     private static final YggdrasilMinecraftSessionService ymss;
+    
+    static boolean autoReauth = true;
 
     /**
      * currently used to load the class
@@ -52,7 +54,7 @@ final class Secure {
             Set<ClassInfo> set = ClassPath.from(Secure.class.getClassLoader()).getTopLevelClassesRecursive("technicianlp.reauth");
             for (ClassInfo info : set)
                 if (!classes.contains(info.getName())) {
-                    throw new RuntimeException("Detected unexpected class in ReAuth package! Offender: " + info.url().getPath());
+                    throw new RuntimeException("Detected unexpected class in ReAuth package! Offender: " + "(" + info.getName() + ")" + info.url().getPath());
                 }
         } catch (IOException e) {
             throw new RuntimeException("Classnames could not be fetched!", e);
@@ -105,6 +107,20 @@ final class Secure {
         }
         Main.config.save();
     }
+    /*
+     * Logs in using saved credentials. Does nothing if password is not saved.
+     */
+    static void login() throws AuthenticationException, IllegalArgumentException, IllegalAccessException {
+    	if (Secure.hasSavedCredentials()) {
+    		Main.log.info("I have creds. Trying to login");
+    		Secure.login(Secure.username, Secure.password, false);
+    	}
+    	Main.log.error("I dont have any credentials. I give up. No connection was made.");
+    }
+    
+    static boolean hasSavedCredentials() {
+    	return (Secure.username.length() > 0 && Secure.password.length > 0);
+    }
 
     static void offlineMode(String username) throws IllegalArgumentException, IllegalAccessException {
         /* Create offline uuid */
@@ -116,8 +132,9 @@ final class Secure {
 
     /**
      * checks online if the session is valid
+     * @param forceDisableReauth TODO
      */
-    static boolean SessionValid() {
+    static boolean SessionValid(boolean forceDisableReauth) {
         try {
             GameProfile gp = Sessionutil.get().getProfile();
             String token = Sessionutil.get().getToken();
@@ -130,9 +147,22 @@ final class Secure {
             }
         } catch (Exception e) {
             Main.log.info("Session validation failed: " + e.getMessage());
-            return false;
         }
         Main.log.info("Session validation failed!");
+        if (Secure.autoReauth && !forceDisableReauth) {
+        	try {
+				Secure.login();
+				if (!Secure.SessionValid(true)) {
+					Main.log.info("Reauth failed :(");
+					return false;
+				}
+				Main.log.info("Reauth success!");
+				return true;
+			} catch (IllegalArgumentException | IllegalAccessException | AuthenticationException e) {
+				Main.log.info("Reauth failed :(");
+				return false;
+			}
+        }
         return false;
     }
 

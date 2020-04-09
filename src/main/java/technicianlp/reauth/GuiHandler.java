@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiMultiplayer;
+import net.minecraft.client.gui.GuiDisconnected;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.client.event.GuiScreenEvent.ActionPerformedEvent;
 import net.minecraftforge.client.event.GuiScreenEvent.DrawScreenEvent;
@@ -12,8 +13,13 @@ import net.minecraftforge.client.event.GuiScreenEvent.InitGuiEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.text.TextComponentTranslation;
 
 import java.awt.Color;
+import java.lang.reflect.Field;
 
 @Mod.EventBusSubscriber(modid = "reauth", value = Side.CLIENT)
 public final class GuiHandler {
@@ -37,7 +43,7 @@ public final class GuiHandler {
             if (enabled && !status.check()) {
                 if (validator != null)
                     validator.interrupt();
-                validator = new Thread(() -> status.set(Secure.SessionValid() ? ValidationStatus.Valid : ValidationStatus.Invalid), "Session-Validator");
+                validator = new Thread(() -> status.set(Secure.SessionValid(false) ? ValidationStatus.Valid : ValidationStatus.Invalid), "Session-Validator");
                 validator.setDaemon(true);
                 validator.start();
             }
@@ -45,6 +51,25 @@ public final class GuiHandler {
             run = true;
             // Support for Custom Main Menu (add button outside of viewport)
             e.getButtonList().add(new GuiButton(17325, -50, -50, 20, 20, "ReAuth"));
+        } else if (enabled && e.getGui() instanceof GuiDisconnected) {
+        	final GuiScreen screen = e.getGui();
+        	final GuiDisconnected dcgui = (GuiDisconnected) screen;
+        	TextComponentTranslation dcreason = null;
+        	try {
+        		 dcreason = (TextComponentTranslation) reflectionHelper.getDCMessage(dcgui);
+        		 if (dcreason.getKey().contentEquals("disconnect.loginFailedInfo")) {
+             		Main.log.info("Disconnected. Let's find out why." + dcreason.getFormatArgs());
+             		for (Object sibling : dcreason.getFormatArgs()) {
+             			if (((TextComponentTranslation) sibling).getKey().contentEquals("disconnect.loginFailedInfo.invalidSession")) {
+             				Main.log.info("Session is invalid!");
+             				status.invalidate();
+             			}
+             		}
+             	}
+        	} catch (Exception e1) {
+        		Main.log.info("Disconnected. I don't care. error:" + e1.getLocalizedMessage());
+        	}
+        	
         }
 
         if (run && VersionChecker.shouldRun())
@@ -57,7 +82,21 @@ public final class GuiHandler {
             e.getGui().drawString(e.getGui().mc.fontRenderer, "Online:", 110, 10, 0xFFFFFFFF);
             ValidationStatus state = status.get();
             e.getGui().drawString(e.getGui().mc.fontRenderer, (bold ? ChatFormatting.BOLD : "") + state.text, 145, 10, state.color);
-        }
+        } 
+    }
+    
+    static final class reflectionHelper {
+    	
+    	private static Field messageField = ReflectionHelper.findField(GuiDisconnected.class, "message", "f", "field_146304_f ");
+    	static ITextComponent getDCMessage(GuiDisconnected dcgui) {
+    		try {
+				return (ITextComponent) reflectionHelper.messageField.get(dcgui);
+			} catch (IllegalArgumentException | IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return new TextComponentString("");
+			}
+    	}
     }
 
     @SubscribeEvent

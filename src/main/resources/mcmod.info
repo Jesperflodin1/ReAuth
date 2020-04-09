@@ -3,11 +3,11 @@
   "modid": "reauth",
   "name": "ReAuth",
   "description": "A Mod to renew your Session",
-  "version": "3.6.0",
+  "version": "3.6.1-JesperF",
   "mcversion": "[1.12]",
   "url": "http://minecraft.curseforge.com/projects/reauth",
   "updateUrl": "",
-  "authorList": ["TechnicianLP"],
+  "authorList": ["TechnicianLP, JesperFlodin"],
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
