@@ -9,10 +9,22 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 //Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
 
-version = "3.6.3-JesperF"
-group = "technicianlp" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "reauth"
+def releaseVersion   = "0"
+def majorVersion     = "0"
+def minorVersion     = "1"
+def patchVersion     = "0"
+def packageVersion   = releaseVersion+"."+majorVersion+"."+minorVersion+"."+patchVersion
+def mcVersion        = "1.12.1"
+def forgeVersion     = "14.22.1.2478"
+def acceptedVersions = "[1.12, 1.12.2]"
+def modId            = "reauthjf"
+def modName          = "ReAuth-JF"
+
+version = mcVersion+"-"+packageVersion
+group = "fi.flodin" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = modId
 
 sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 compileJava {
@@ -20,7 +32,7 @@ compileJava {
 }
 
 minecraft {
-    version = "1.12.2-14.23.0.2512"
+    version = mcVersion+"-"+forgeVersion
     if (file('../run').exists()) {
         runDir = "../run"
     }
@@ -28,7 +40,9 @@ minecraft {
         runDir = "run"
     }
 
-    mappings = "snapshot_20171015"
+    mappings = "snapshot_20171209"
+    
+    replace '@packageVersion@': packageVersion, '@mcVersion@': mcVersion, '@acceptedVersions@': acceptedVersions, '@ModName@': modName, '@ModId@': modId, '@certSHA1@': project.signSHA1, '@GroupId@': group
 }
 
 jar {
@@ -47,7 +61,7 @@ processResources {
         include 'mcmod.info'
 
         // replace version and mcversion
-        expand 'version': project.version, 'mcversion': project.minecraft.version
+        expand 'version': packageVersion, 'mcversion': mcVersion, 'modid': modId, 'modname': modName
     }
 
     // copy everything else except the mcmod.info
@@ -56,79 +70,16 @@ processResources {
     }
 }
 
-
-import com.google.common.base.Charsets
-import com.google.common.io.Files
-import groovy.swing.SwingBuilder
-
-import java.awt.*
-import java.util.function.Consumer
-
-// this task replace lines that end with "// @Replace(<code>)" with <code> when building
-// this allows for different behaviour in dev environment (ie disabled signature checks)
-task replaceSourceMain(type: DefaultTask, dependsOn: sourceMainJava) {
-    doLast {
-        project.fileTree(sourceMainJava.output).matching {
-            include '**/*.java'
-        }.forEach(new Consumer<File>() {
-            @Override
-            void accept(File file) {
-                String text = Files.toString(file, Charsets.UTF_8)
-                text = text.replaceAll('.*// ?@[Rr]eplace\\((.*)\\)', '$1')
-                Files.write(text, file, Charsets.UTF_8)
-            }
-        })
-    }
-}
-compileJava.dependsOn(replaceSourceMain)
-
 task signJar(type: Exec, dependsOn: reobfJar) {
     onlyIf {
         project.hasProperty('keyStore')
     }
-    ext {
-        storePass = null
-        keyPass = null
-    }
     executable = "jarsigner"
     args(["-signedJar", jar.archivePath, jar.archivePath, project.keyStoreAlias,
           "-tsa", project.tsa,
-          "-keystore", project.keyStore])
-    doFirst {
-        if (storePass != null && storePass?.trim())
-            args(["-storepass", storePass])
-        if (keyPass != null && keyPass?.trim())
-            args(["-keypass", keyPass])
-    }
+          "-keystore", project.keyStore,
+          "-storepass", project.keyStorePass,
+          "-keypass", project.keyStoreKeyPass])
 }
 build.dependsOn signJar
-
-gradle.taskGraph.whenReady { taskGraph ->
-    if (taskGraph.hasTask(':signJar')) {
-        if (System.console() == null) {
-            new SwingBuilder().edt {
-                dialog(modal: true, title: 'KeyStore Passwords', alwaysOnTop: true, resizable: false,
-                        locationRelativeTo: null, show: true, size: [300, 150]) {
-                    panel(layout: new BorderLayout(5, 5)) {
-                        def store
-                        def key
-                        vbox(constraints: BorderLayout.CENTER) {
-                            label(text: "Keystore:",)
-                            store = passwordField()
-                            label(text: "Key:")
-                            key = passwordField()
-                        }
-                        button(defaultButton: true, text: 'OK', constraints: BorderLayout.SOUTH, actionPerformed: {
-                            signJar.storePass = new String(store.password)
-                            signJar.keyPass = new String(key.password)
-                            dispose()
-                        })
-                    }
-                }
-            }
-        } else {
-            signJar.storePass = new String(System.console().readPassword("\nKeyStore Password: "))
-            signJar.keyPass = new String(System.console().readPassword("\nKey Password: "))
-        }
-    }
-}
+runClient.dependsOn signJar

@@ -1,4 +1,4 @@
-package technicianlp.reauth;
+package fi.flodin.reauth;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

@@ -1,13 +1,13 @@
 [
 {
-  "modid": "reauth",
-  "name": "ReAuth",
-  "description": "A Mod to renew your Session",
-  "version": "3.6.3-JesperF",
-  "mcversion": "[1.12]",
+  "modid": "${modid}",
+  "name": "${modname}",
+  "description": "A Mod to renew your Session. Fork of ReAuth which adds automates things a bit more and backports features from Reauth for newer minecraft versions.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
   "url": "http://minecraft.curseforge.com/projects/reauth",
   "updateUrl": "",
-  "authorList": ["TechnicianLP, JesperFlodin"],
+  "authorList": ["JesperFlodin", "TechnicianLP"],
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
